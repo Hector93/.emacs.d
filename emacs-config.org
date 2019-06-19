@@ -81,7 +81,7 @@ para funcionar requiere instalar irony-server el cual depende de llvm y clang
     'company-backends '(company-irony-c-headers company-irony))
 )
 #+END_SRC
-* parentesis
+* identa codigo
 #+BEGIN_SRC emacs-lisp
  (use-package aggressive-indent
    :ensure t
@@ -103,7 +103,28 @@ rtags debe instalarse en el sistema
 )
 #+END_SRC
 
-
+* org-bullets
+  
+#+BEGIN_SRC emacs-lisp
+(use-package org-bullets
+:ensure t
+:config 
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+)
+#+END_SRC
+* neo-tree
+#+BEGIN_SRC emacs-lisp
+(use-package neotree
+:ensure t
+:config 
+(global-set-key [f8] 'neotree-toggle)
+(setq neo-theme (if (display-graphic-p) 'icons 'arrow)))
+#+END_SRC
+* all-the-icons
+#+BEGIN_SRC emacs-lisp
+(use-package all-the-icons
+:ensure t)
+#+END_SRC
 * company-rtags
   
 #+BEGIN_SRC emacs-lisp
@@ -173,26 +194,11 @@ renombrar stm32-emacs a stm32
 (setq org-latex-listings 'minted)
 #+END_SRC
 
-** org-cv
 
+* git
+** git-gutter
 #+BEGIN_SRC emacs-lisp
-(use-package ox-moderncv
-    :load-path "~/Descargas/org-cv/"
-    :init (require 'ox-altacv))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-;; Markdown support
-
-(require 'markdown-mode)
-
-(require 'markdown-mode+)
-
-(setq markdown-command "/usr/bin/markdown")
-
-(add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
-
-(add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
-
-(setq markdown-css-paths `(,(expand-file-name "Documentos/markdown.css")))
+(use-package git-gutter
+:ensure t
+:config(global-git-gutter-mode +1))
 #+END_SRC
