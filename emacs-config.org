@@ -114,11 +114,15 @@ rtags debe instalarse en el sistema
 #+END_SRC
 * neo-tree
 #+BEGIN_SRC emacs-lisp
-(use-package neotree
-:ensure t
-:config 
-(global-set-key [f8] 'neotree-toggle)
-(setq neo-theme (if (display-graphic-p) 'icons 'arrow)))
+  (use-package neotree
+    :ensure t
+    :config 
+    (global-set-key [f8] 'neotree-toggle)
+    (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
+    (setq neo-autorefresh nil)
+    (setq neo-create-file-auto-open t)
+    (setq neo-window-width 30)
+    )
 #+END_SRC
 * all-the-icons
 #+BEGIN_SRC emacs-lisp
@@ -194,11 +198,128 @@ renombrar stm32-emacs a stm32
 (setq org-latex-listings 'minted)
 #+END_SRC
 
-
+* yasnippet
+#+BEGIN_SRC emacs-lisp
+  (use-package yasnippet
+    :ensure t
+    :config
+    (add-to-list 'load-path
+		 "~/.emacs.d/plugins/yasnippet")
+    )
+#+END_SRC
+se tienen que añadir snipets
+#+BEGIN_SRC emacs-lisp
+  (use-package yasnippet-snippets
+    :ensure t
+    )
+#+END_SRC
 * git
 ** git-gutter
 #+BEGIN_SRC emacs-lisp
 (use-package git-gutter
 :ensure t
 :config(global-git-gutter-mode +1))
+#+END_SRC
+* python
+elpy
+#+BEGIN_SRC emacs-lisp
+  (use-package elpy
+    :ensure t
+    :defer t
+    :init
+    (advice-add 'python-mode :before 'elpy-enable)
+    )
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(use-package flycheck-pycheckers
+    :ensure t
+    :defer t
+    :init
+    (with-eval-after-load 'flycheck
+    (add-hook 'flycheck-mode-hook #'flycheck-pycheckers-setup))
+)
+#+END_SRC
+* yaml
+yaml
+#+BEGIN_SRC emacs-lisp
+  (use-package yaml-mode
+    :ensure t
+    )
+#+END_SRC
+* frontEnd
+* typescript
+#+BEGIN_SRC emacs-lisp
+  (use-package typescript-mode
+    :ensure t
+    :config
+    (with-eval-after-load 'typescript-mode (add-hook 'typescript-mode-hook #'lsp))
+)
+#+END_SRC
+* angular
+#+BEGIN_SRC emacs-lisp
+  (use-package ng2-mode
+    :ensure t)
+#+END_SRC
+* javascript
+js2 
+#+BEGIN_SRC emacs-lisp
+  (use-package js2-mode
+    :ensure t	 
+    )
+(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+
+;; Better imenu
+(add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
+#+END_SRC
+
+js2-refactor
+#+BEGIN_SRC emacs-lisp
+  (use-package js2-refactor
+    :ensure t
+    :config
+    (add-hook 'js2-mode-hook #'js2-refactor-mode)
+    (js2r-add-keybindings-with-prefix "C-c C-r")
+    (define-key js-mode-map (kbd "M-.") nil)
+    (define-key js2-mode-map (kbd "C-k") #'js2r-kill)
+    )
+#+END_SRC
+xref-js2
+#+BEGIN_SRC emacs-lisp
+  (use-package xref-js2
+    :ensure t
+    :config
+    (add-hook 'js2-mode-hook (lambda ()
+			       (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
+    )
+
+#+END_SRC
+* projectile
+#+BEGIN_SRC emacs-lisp
+  (use-package projectile
+    :ensure t
+    :config
+    (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+    (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+    (projectile-mode +1))
+#+END_SRC
+
+* dashboard
+  requiere page-break-lines
+#+BEGIN_SRC emacs-lisp
+  (use-package page-break-lines
+    :ensure t
+    :config (turn-on-page-break-lines-mode))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+  (use-package dashboard
+    :ensure t
+    :config
+    (dashboard-setup-startup-hook)
+    (setq dashboard-items '((recents  . 3)
+			    (projects . 5)))
+  (setq projectile-switch-project-action 'neotree-projectile-action)
+  (setq dashboard-startup-banner 'logo)
+)
+
 #+END_SRC

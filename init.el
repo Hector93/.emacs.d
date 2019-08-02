@@ -32,4 +32,5 @@ There are two things you can do about this warning:
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(flycheck-pycheckers-checkers (quote (pylint flake8)))
  '(package-selected-packages (quote (markdown-mode markdown-mode+ use-package))))
