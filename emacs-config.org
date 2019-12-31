@@ -1,43 +1,86 @@
-#+TITLE: Emacs configuration
+#+TITLE: Configuraciones de emacs
 #+DESCRIPTION: An org-babel based emacs configuration
 #+LANGUAGE: en
 #+PROPERTY: results silent
+* personalizacion
+En esta seccion se ponen configuraciones propias de emacs
+** tema
+emacs tiene muchas firmas de configurar temas, ya sean temas externos o propios de emacs
+para ver los temas incluidos en emacs ejecuta el comando M-x customize-themes
 
-* tema
+NOTA: se debe tener consideracion al instalar temas de terceros ya que estos son codigo lisp
+y ejecutar codigo arbitrario en un dispositivo tiene riesgos de seguridad
+   #+BEGIN_SRC emacs-lisp
+   (load-theme 'tango-dark)
+   #+END_SRC
 
+** cua mode
+ emacs por default no usa los atajos comunes para copiar pegar etc, pero los soporta, para usar
+ la configuracion Ctrl-c (copiar), Ctrl-v (pegar) etc se usa el modo cua
+ #+BEGIN_SRC emacs-lisp
+ (cua-mode 1)
+ #+END_SRC
+** yes-or-no
+ emacs por default pide que se escriba explicitamente yes o no para acciones, se puede cambiar este comportamiento
+ sobreescribiendo el alias
+ #+BEGIN_SRC emacs-lisp
+  (defalias 'yes-or-no-p 'y-or-n-p)
+ #+END_SRC
+** desactivar campana
+ emacs cada que llega al inicio o final del buffer emite un sonido que no es de mi agrado, por suerte con
+ un poco de lisp se puede sobreescribir este comportamiento.
+ #+BEGIN_SRC emacs-lisp
+   (setq visible-bell nil
+	 ring-bell-function 'flash-mode-line)
+   (defun flash-mode-line ()
+     (invert-face 'mode-line)
+     (run-with-timer 0.1 nil #'invert-face 'mode-line))
+
+ #+END_SRC
+** tool-bar
+  emacs tiene una barra que ayuda a los nuevos usuarios a usarlo de manera mas facil, este modo es
+  el tool-bar-mode, una vez que ya se dominan los comandos de emacs esta barra es inecesaria y ocupa espacio que se puede dedicar
+  a codigo
   #+BEGIN_SRC emacs-lisp
-  (load-theme 'tango-dark)
+   (tool-bar-mode -1) 
   #+END_SRC
 
-* numero de linea
-#+BEGIN_SRC emacs-lisp
-(global-display-line-numbers-mode 1) ; always show line numbers
-(cua-mode 1)
-(defalias 'yes-or-no-p 'y-or-n-p)
-(setq visible-bell nil
-      ring-bell-function 'flash-mode-line)
-(defun flash-mode-line ()
-  (invert-face 'mode-line)
-  (run-with-timer 0.1 nil #'invert-face 'mode-line))
-(tool-bar-mode -1) 
-(electric-pair-mode 1)
-(ido-mode 1)
-;; remember cursor position. When file is opened, put cursor at last position
-(if (version< emacs-version "25.0")
-    (progn
-      (require 'saveplace)
-      (setq-default save-place t))
-  (save-place-mode 1))
+** electric-pair
+  los parentesis en emacs por default no se cierran solos, pero la funcionalidad para hacer esto y mas
+  ya se encuentran implementadas en el modo electric-pair-mode este tiene varias funcionalidades, la que mas
+  me gusta es la capacidad de seleccionar texto y presionar la tecla de abrir parentesis y que encierre el texto
+  seleccionado en ellos
+  #+BEGIN_SRC emacs-lisp
+   (electric-pair-mode 1)
+  #+END_SRC
 
-;; wrap long lines by word boundary, and arrow up/down move by visual line, etc
-(global-visual-line-mode 1)
-;; when in a url link, enter key should open it
-  (setq org-return-follows-link t)
+** ido-mode
+  cuando se desea abrir un buffer emacs por default pide que se escriba la ruta a mano, el modo ido
+  nos presenta una seleccion de archivos y carpetas dentro de la ruta en la que nos encontramos
+  #+BEGIN_SRC emacs-lisp
+   (ido-mode 1)
+  #+END_SRC
 
-  ;; make org-mode” syntax color embedded source code
-  (setq org-src-fontify-natively t)
+** posicion del cursor
+  guardar la posicion del cursor al cerrar un archivo y posicionar el cursor en la posicion guardada cuando se abre de nuevo el archivo
+   #+BEGIN_SRC emacs-lisp
 
-#+END_SRC
+     ;; recuerda la posicion del cursor. cuando el archivo es reabierto pone el cursor en la posicion guardada
+     (if (version< emacs-version "25.0")
+	 (progn
+	   (require 'saveplace)
+	   (setq-default save-place t))
+       (save-place-mode 1))
+
+     ;; wrap long lines by word boundary, and arrow up/down move by visual line, etc
+     (global-visual-line-mode 1)
+     ;; when in a url link, enter key should open it
+       (setq org-return-follows-link t)
+
+       ;; make org-mode” syntax color embedded source code
+       (setq org-src-fontify-natively t)
+
+   #+END_SRC
 
 * completa codigo
 Company es usado para completar codigo, tiene varios backends para diferentes lenguajes de programacion.
@@ -82,6 +125,8 @@ para funcionar requiere instalar irony-server el cual depende de llvm y clang
 )
 #+END_SRC
 * identa codigo
+por default emacs hace un buen trabajo a la hora de identar codigo, pero esta funcionalidad se puede mejorar
+con aggressive-indent este forza todo el tiempo a que el codigo este bien identado
 #+BEGIN_SRC emacs-lisp
  (use-package aggressive-indent
    :ensure t
@@ -90,7 +135,10 @@ para funcionar requiere instalar irony-server el cual depende de llvm y clang
 #+END_SRC
 
 * rtags
-rtags debe instalarse en el sistema
+rtags es una herramienta que sirve para generar tags del proyecto, estos tags son itilizados por emacs para
+encontrar definiciones de variables o funciones, esto es genial cuando se quiere visitar una funcion sin 
+saber en que archivo se encuentra
+NOTA: rtags debe instalarse en el sistema y no es el unico soportado por emacs, tambien esta gnuglobal
 #+BEGIN_SRC emacs-lisp
 (use-package rtags
 :ensure t
@@ -104,7 +152,7 @@ rtags debe instalarse en el sistema
 #+END_SRC
 
 * org-bullets
-  
+org-bullets es lo que hace que las cabeceras de los archivos org se vean con un icono y no asteriscos
 #+BEGIN_SRC emacs-lisp
 (use-package org-bullets
 :ensure t
@@ -112,7 +160,10 @@ rtags debe instalarse en el sistema
 (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 )
 #+END_SRC
+
 * neo-tree
+muestra un arbol de aarchivos, funciona con o sin projectile, pero si estas dentro de un proyecto neo-tree
+este te mostrara el arbol de directorios de tu proyecto
 #+BEGIN_SRC emacs-lisp
   (use-package neotree
     :ensure t
@@ -125,12 +176,15 @@ rtags debe instalarse en el sistema
     )
 #+END_SRC
 * all-the-icons
+usado para mostrar iconos utf-8 en emacs, donde mas se pueden ver estos archivos es en neo-tree
+pero no esta limitado solo a este
 #+BEGIN_SRC emacs-lisp
 (use-package all-the-icons
 :ensure t)
 #+END_SRC
 * company-rtags
-  
+integra el modulo de rtags con el backend de company para que ambos trabajen en conjunto y la experiencia
+sea mejor  
 #+BEGIN_SRC emacs-lisp
 (use-package company-rtags
 :ensure t
@@ -143,6 +197,8 @@ rtags debe instalarse en el sistema
 #+END_SRC
 
 * cmake-ide
+añade las funcionalidades de cmake a emacs, esto es muy util por que emacs ahora puede sacar la informacion de un proyecto creado con
+cmake
 #+BEGIN_SRC emacs-lisp
 (use-package dash
 :ensure t)
@@ -153,7 +209,10 @@ rtags debe instalarse en el sistema
 
 #+END_SRC
 * flycheck
-
+flycheck es un modulo que se usa para revisar errores y reglas de codigo, el plugin es independiente del lenguaje,
+por lo que se tienen que instalar sus dependencias para cada lenguaje
+NOTA: cada plugin requiere dependencias externas a emacs como puede ser un compilador o herramientas usadas para el
+analisis, para mas informacion: https://www.flycheck.org/en/latest/
 #+BEGIN_SRC emacs-lisp
 (use-package flycheck
   :ensure t
@@ -161,6 +220,9 @@ rtags debe instalarse en el sistema
 #+END_SRC
 
 * flycheck rtags
+añade los tags de rtags a flyacheck, con esto flycheck puede analizar mas completamente el proyecto, un ejemplo de esto es
+en el caso de c que si no esta definido un #DEFINE sombrea la seccion del codigo para que de manera visual se vea que ese codigo
+no se usa
 #+BEGIN_SRC emacs-lisp
 (use-package flycheck-rtags
 :ensure t
@@ -207,7 +269,7 @@ renombrar stm32-emacs a stm32
 		 "~/.emacs.d/plugins/yasnippet")
     )
 #+END_SRC
-se tienen que añadir snipets
+yasnippet no incluye las plantillas(snipets) por lo que se tienen que añadir snipets
 #+BEGIN_SRC emacs-lisp
   (use-package yasnippet-snippets
     :ensure t
@@ -215,13 +277,16 @@ se tienen que añadir snipets
 #+END_SRC
 * git
 ** git-gutter
+git gutter muestra los cambios en un archivo abierto, muestra lo que se añade, lo que se edita, y lo que se borra
 #+BEGIN_SRC emacs-lisp
 (use-package git-gutter
 :ensure t
 :config(global-git-gutter-mode +1))
 #+END_SRC
+
 * python
 elpy
+elpy es ina herramienta que cinfigura emacs para trabajar con python.
 #+BEGIN_SRC emacs-lisp
   (use-package elpy
     :ensure t
@@ -231,6 +296,7 @@ elpy
     )
 #+END_SRC
 
+elpy no incluye validadores de codigo por lo que se añade a flycheck los validadores de python
 #+BEGIN_SRC emacs-lisp
 (use-package flycheck-pycheckers
     :ensure t
@@ -241,7 +307,7 @@ elpy
 )
 #+END_SRC
 * yaml
-yaml
+modo para los archivos yaml
 #+BEGIN_SRC emacs-lisp
   (use-package yaml-mode
     :ensure t
@@ -305,13 +371,13 @@ xref-js2
 #+END_SRC
 
 * dashboard
-  requiere page-break-lines
+dashboard reemplaza la ventana por defecto de emacs y pone un historico de archivos recientes y de proyectos,
+dashboard para funcionar requiere page-break-lines
 #+BEGIN_SRC emacs-lisp
   (use-package page-break-lines
     :ensure t
     :config (turn-on-page-break-lines-mode))
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
+
   (use-package dashboard
     :ensure t
     :config
@@ -324,6 +390,7 @@ xref-js2
 
 #+END_SRC
 * visual-regexp
+vusal-regexp extiene la funcionalidad de replace-regexp con esto el remplazo de expreciones regulares sea mejor
 #+BEGIN_SRC emacs-lisp
   (use-package visual-regexp
     :ensure t)
