@@ -1,9 +1,12 @@
 ;;configuracion de inicio de emacs
 
-;; add MELPA package server
+
+;;add MELPA package server
+(set 'gc-cons-threshold 100000000) ;; 100mb
+(setq read-process-output-max (* 1024 1024)) ;; 1mb
 (require 'package)
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
-                    (not (gnutls-available-p))))
+		    (not (gnutls-available-p))))
        (proto (if no-ssl "http" "https")))
   (when no-ssl
     (warn "\
@@ -19,18 +22,23 @@ There are two things you can do about this warning:
     ;; For important compatibility libraries like cl-lib
     (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
 (package-initialize)
-
-;; if not yet installed, install package use-package
-(unless (package-installed-p 'use-package)
-  (package-install 'use-package))
+(eval-when-compile
+  (require 'use-package))
 
 ;; load org package and our emacs-config.org file
 (require 'org)
-(org-babel-load-file "~/.emacs.d/emacs-config.org") 
+(org-babel-load-file "~/.emacs.d/emacs-config.org")
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(flycheck-pycheckers-checkers (quote (pylint flake8)))
- '(package-selected-packages (quote (markdown-mode markdown-mode+ use-package))))
+ '(package-selected-packages
+   '(visual-regexp-steroids dashboard page-break-lines projectile magit use-package))
+ '(safe-local-variable-values '((cmake-ide-build-dir . "build"))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
