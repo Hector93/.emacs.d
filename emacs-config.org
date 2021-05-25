@@ -1,403 +1,520 @@
-#+TITLE: Configuraciones de emacs
+#+TITLE: Emacs configuration
 #+DESCRIPTION: An org-babel based emacs configuration
 #+LANGUAGE: en
 #+PROPERTY: results silent
-* personalizacion
-En esta seccion se ponen configuraciones propias de emacs
-** tema
-emacs tiene muchas firmas de configurar temas, ya sean temas externos o propios de emacs
-para ver los temas incluidos en emacs ejecuta el comando M-x customize-themes
 
-NOTA: se debe tener consideracion al instalar temas de terceros ya que estos son codigo lisp
-y ejecutar codigo arbitrario en un dispositivo tiene riesgos de seguridad
+* ajustes
+** garbage collector
+   In some case the garbage collector will cause performace issues on very large
+   files or when using a lot of plugins, this will thell emacs to use more memory
+   and as a consecuence the garbage collector will be called less often.
+
+   #+BEGIN_SRC emacs-lisp
+   (set 'gc-cons-threshold 100000000)
+   #+END_SRC
+
+** line numbers (linum)
+   this will display the line number in all the files opened with emacs
+   sometimes this causes performance issues so if that's the case only
+   enable linue numbers in a specific file or hook.
+ #+BEGIN_SRC emacs-lisp
+   (global-display-line-numbers-mode 1)
+ #+END_SRC
+
+** normal keybindigns
+   by default Emacs doesn't use the defacto standard of ctrl-c, ctrl-v, etc
+   to edit files emacs uses ctrl-w and ctrl-y but to enable the normal and
+   expected operation we can use cua mode to enable the expected behaviour.
+
+   #+BEGIN_SRC emacs-lisp
+   (cua-mode 1)
+   #+END_SRC
+
+** theme
+   Emacs can be customized by hand or we can use the default themesand you can
+   even load themes created by another authors, but this is a security risk because
+   emacs themes are lisp code and the need to be executed in your local machine,
+   that's the main reason why i'm using a built in theme, in this case tango-dark.
+
+
    #+BEGIN_SRC emacs-lisp
    (load-theme 'tango-dark)
    #+END_SRC
 
-** cua mode
- emacs por default no usa los atajos comunes para copiar pegar etc, pero los soporta, para usar
- la configuracion Ctrl-c (copiar), Ctrl-v (pegar) etc se usa el modo cua
- #+BEGIN_SRC emacs-lisp
- (cua-mode 1)
- #+END_SRC
-** yes-or-no
- emacs por default pide que se escriba explicitamente yes o no para acciones, se puede cambiar este comportamiento
- sobreescribiendo el alias
- #+BEGIN_SRC emacs-lisp
-  (defalias 'yes-or-no-p 'y-or-n-p)
- #+END_SRC
-** desactivar campana
- emacs cada que llega al inicio o final del buffer emite un sonido que no es de mi agrado, por suerte con
- un poco de lisp se puede sobreescribir este comportamiento.
- #+BEGIN_SRC emacs-lisp
-   (setq visible-bell nil
-	 ring-bell-function 'flash-mode-line)
-   (defun flash-mode-line ()
-     (invert-face 'mode-line)
-     (run-with-timer 0.1 nil #'invert-face 'mode-line))
+** change yes-or-no-p to y-or-n-p
+   when Emacs asks for permission or to confirm an operation it will require you
+   to insert the word yes or no depending on the situation, this is safer because
+   it forces the user to read more carefully, but in my case i whant to say yes or
+   no with a simple key in this case "y" or "n", to acomplish that we can use the
+   built in alias.
 
- #+END_SRC
-** tool-bar
-  emacs tiene una barra que ayuda a los nuevos usuarios a usarlo de manera mas facil, este modo es
-  el tool-bar-mode, una vez que ya se dominan los comandos de emacs esta barra es inecesaria y ocupa espacio que se puede dedicar
-  a codigo
-  #+BEGIN_SRC emacs-lisp
-   (tool-bar-mode -1) 
-  #+END_SRC
-
-** electric-pair
-  los parentesis en emacs por default no se cierran solos, pero la funcionalidad para hacer esto y mas
-  ya se encuentran implementadas en el modo electric-pair-mode este tiene varias funcionalidades, la que mas
-  me gusta es la capacidad de seleccionar texto y presionar la tecla de abrir parentesis y que encierre el texto
-  seleccionado en ellos
-  #+BEGIN_SRC emacs-lisp
-   (electric-pair-mode 1)
-  #+END_SRC
-
-** ido-mode
-  cuando se desea abrir un buffer emacs por default pide que se escriba la ruta a mano, el modo ido
-  nos presenta una seleccion de archivos y carpetas dentro de la ruta en la que nos encontramos
-  #+BEGIN_SRC emacs-lisp
-   (ido-mode 1)
-  #+END_SRC
-
-** posicion del cursor
-  guardar la posicion del cursor al cerrar un archivo y posicionar el cursor en la posicion guardada cuando se abre de nuevo el archivo
    #+BEGIN_SRC emacs-lisp
-
-     ;; recuerda la posicion del cursor. cuando el archivo es reabierto pone el cursor en la posicion guardada
-     (if (version< emacs-version "25.0")
-	 (progn
-	   (require 'saveplace)
-	   (setq-default save-place t))
-       (save-place-mode 1))
-
-     ;; wrap long lines by word boundary, and arrow up/down move by visual line, etc
-     (global-visual-line-mode 1)
-     ;; when in a url link, enter key should open it
-       (setq org-return-follows-link t)
-
-       ;; make org-mode” syntax color embedded source code
-       (setq org-src-fontify-natively t)
-
+   (defalias 'yes-or-no-p 'y-or-n-p)
    #+END_SRC
 
-* completa codigo
-Company es usado para completar codigo, tiene varios backends para diferentes lenguajes de programacion.
-#+BEGIN_SRC emacs-lisp
-(use-package company               
-  :ensure t
-  :defer t
-  :init (global-company-mode)
-)
-#+END_SRC
-** C
-irony mode es un backend de company para completar codigo c, lo configuramos y activamos solo en los hooks donde se usa c
-para funcionar requiere instalar irony-server el cual depende de llvm y clang
-#+BEGIN_SRC emacs-lisp
-(use-package irony
-  :ensure t
-  :config
-  (progn
-    (use-package company-irony
-      :ensure t
-      :config
-      (add-to-list 'company-backends 'company-irony)
-      (add-hook 'irony-mode-hook 'electric-pair-mode)
-      (add-hook 'c++-mode-hook 'irony-mode)
-      (add-hook 'c-mode-hook 'irony-mode)
-      (add-hook 'irony-mode-hook 'company-irony-setup-begin-commands)
-      (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
-      
-      (setq company-idle-delay 0.2)
-      (setq company-minimum-prefix-length 2)
+** disable toolbar
+   by default emacs displays a toolbar to help with basic operations and navigation,
+   but once you learn how to use those commands whith the mouse you can disable the
+   toolbar to gain some space for your buffers.
+
+   #+BEGIN_SRC emacs-lisp
+   (tool-bar-mode -1)
+   #+END_SRC
+
+** close parentesis (Electric pair mode)
+   Electric Pair mode, a global minor mode, provides a way to easily insert matching
+   delimiters. Whenever you insert an opening delimiter, the matching closing delimiter
+   is automatically inserted as well, leaving point between the two.
+
+   #+BEGIN_SRC emacs-lisp
+   (electric-pair-mode 1)
+   #+END_SRC
+
+** interactive navigation
+
+   When searching files to open the default way of emacs requires the full path and the
+   autocomplete is not very nice, by enabling ido mode those autocompletes become more
+   easy to handle and an overall speed increase when opening files.
+
+   #+BEGIN_SRC emacs-lisp
+   (ido-mode 1)
+   #+END_SRC
+
+** remember cursor position
+   By default Emacs will always position the cursor at the begining of the file regardless
+   if it is a new file or if the file is reopen, but when reopening a file emacs can
+   remember where was the last place where the cursor was before leaving the file.
+
+   #+BEGIN_SRC emacs-lisp
+   (if (version< emacs-version "25.0")
+      (progn
+      (require 'saveplace)
+      (setq-default save-place t))
+      (save-place-mode 1)
       )
-)
+   #+END_SRC
 
-#+END_SRC
+** wrap long lines by word
 
-#+BEGIN_SRC emacs-lisp
-(use-package company-irony-c-headers
-:ensure t
-:config 
-(add-to-list
-    'company-backends '(company-irony-c-headers company-irony))
-)
-#+END_SRC
-* identa codigo
-por default emacs hace un buen trabajo a la hora de identar codigo, pero esta funcionalidad se puede mejorar
-con aggressive-indent este forza todo el tiempo a que el codigo este bien identado
-#+BEGIN_SRC emacs-lisp
- (use-package aggressive-indent
-   :ensure t
-   :config
-   (global-aggressive-indent-mode nil))
-#+END_SRC
+   When a line is to big to be displayed, Emacs can wrap the line to make it fit to the
+   available space and when using the arrow keys the navigation will not be line by line, instead
+   between the wraped line.
 
-* rtags
-rtags es una herramienta que sirve para generar tags del proyecto, estos tags son itilizados por emacs para
-encontrar definiciones de variables o funciones, esto es genial cuando se quiere visitar una funcion sin 
-saber en que archivo se encuentra
-NOTA: rtags debe instalarse en el sistema y no es el unico soportado por emacs, tambien esta gnuglobal
-#+BEGIN_SRC emacs-lisp
-(use-package rtags
-:ensure t
-:config
-(setq rtags-completions-enabled t)
-;(define-key c-mode-base-map (kbd "M-.") 'rtags-find-symbol-at-point)
-;(define-key c-mode-base-map (kbd "M-,") 'rtags-location-stack-back)
-;(define-key c-mode-base-map (kbd "M-?") 'rtags-display-summary)
-(rtags-enable-standard-keybindings)
-)
-#+END_SRC
+   #+BEGIN_SRC emacs-lisp
+   (global-visual-line-mode 1)
+   #+END_SRC
 
-* org-bullets
-org-bullets es lo que hace que las cabeceras de los archivos org se vean con un icono y no asteriscos
-#+BEGIN_SRC emacs-lisp
-(use-package org-bullets
-:ensure t
-:config 
-(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
-)
-#+END_SRC
+** replace ring bell
 
-* neo-tree
-muestra un arbol de aarchivos, funciona con o sin projectile, pero si estas dentro de un proyecto neo-tree
-este te mostrara el arbol de directorios de tu proyecto
-#+BEGIN_SRC emacs-lisp
-  (use-package neotree
-    :ensure t
-    :config 
-    (global-set-key [f8] 'neotree-toggle)
-    (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
-    (setq neo-autorefresh nil)
-    (setq neo-create-file-auto-open t)
-    (setq neo-window-width 30)
-    )
-#+END_SRC
-* all-the-icons
-usado para mostrar iconos utf-8 en emacs, donde mas se pueden ver estos archivos es en neo-tree
-pero no esta limitado solo a este
-#+BEGIN_SRC emacs-lisp
-(use-package all-the-icons
-:ensure t)
-#+END_SRC
-* company-rtags
-integra el modulo de rtags con el backend de company para que ambos trabajen en conjunto y la experiencia
-sea mejor  
-#+BEGIN_SRC emacs-lisp
-(use-package company-rtags
-:ensure t
-:config
-(add-to-list 'company-backends 'company-rtags)
-(setq rtags-autostart-diagnostics t)
-(rtags-enable-standard-keybindings)
-(setq rtags-verify-protocol-version nil)
-)
-#+END_SRC
+   By default Emacs will emit a sound when encountering an error or at the end of a file
+   this can be anoying to some people, but we can change that to disable the sound and
+   flash the mode-line when emacs whants to ring the bell.
+
+   #+BEGIN_SRC emacs-lisp
+   (defun flash-mode-line ()
+     (invert-face 'mode-line)
+     (run-with-timer 0.1 nil #'invert-face 'mode-line)
+     )
+   (setq visible-bell nil
+	ring-bell-function 'flash-mode-line)
+   #+END_SRC
+
+** open links in browser
+
+   When emcas encounters a link in a file we can enable the opening the file.
+
+   #+BEGIN_SRC emacs-lisp
+   (setq org-return-follows-link t)
+   #+END_SRC
+
+** colored org code blocks
+
+   Enable colored org-mode code blocks.
+
+   #+BEGIN_SRC emacs-lisp
+   (setq org-src-fontify-natively t)
+   #+END_SRC
+
+** Highlight parentheses
+   Highlight corresponding parentheses when cursor is on one
+
+   #+BEGIN_SRC emacs-lisp
+    (show-paren-mode t)
+   #+END_SRC
+
+** Highlight tabulations
+   Highlight tabulations when cursor is on one
+
+   #+BEGIN_SRC emacs-lisp
+   (setq-default highlight-tabs t)
+   #+END_SRC
+
+** trailing white spaces
+
+   #+BEGIN_SRC emacs-lisp
+   (setq-default show-trailing-whitespace t)
+   #+END_SRC
+
+** withe space at the end of file
+
+   By default Emacs will complain if you save a file without a whitespace at
+   the end of it, but we can disable it.
+
+   #+BEGIN_SRC emacs-lisp
+   (add-hook 'before-save-hook 'whitespace-cleanup)
+   (add-hook 'before-save-hook (lambda() (delete-trailing-whitespace)))
+   #+END_SRC
+
+** backup files on their own folder
+   enacs creates temporal files that contain changes to the file, and that file
+   is removed, this can be changed to store all those file to a single directory
+   without disabling the functionallity
+
+   #+BEGIN_SRC emacs-lisp
+   (setq backup-directory-alist '(("." . "~/.saves")))
+   #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+   (setq backup-directory-alist
+	  `((".*" . ,"~/.saves")))
+   (setq auto-save-file-name-transforms
+	  `((".*" ,"~/.saves" t)))
+   #+END_SRC
+* plugins
+
+** system packages
+   use-package can install the dependencies of the emacs plugins
+   if configured correctly.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package use-package-ensure-system-package
+       :ensure t
+       :defer t
+     )
+     (use-package system-packages
+     :ensure t
+     :defer t
+     )
+   #+END_SRC
+
+** git
+
+*** magit
+
+ #+BEGIN_SRC emacs-lisp
+   (use-package magit
+     :ensure t
+     :defer t
+     )
+ #+END_SRC
+** ide like config
+
+*** TODO projectile
+   #+BEGIN_SRC emacs-lisp
+     (use-package projectile
+       :ensure t
+       :config
+       (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+       (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+       (projectile-mode +1))
+   #+END_SRC
+
+*** dashboard
+     requiere page-break-lines
+   #+BEGIN_SRC emacs-lisp
+     (use-package page-break-lines
+       :ensure t
+       )
+   #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+       (use-package dashboard
+	 :ensure t
+	 :requires page-break-lines
+	 :config
+	 (dashboard-setup-startup-hook)
+	 (setq dashboard-items '((recents  . 3)
+				(projects . 5)))
+	 ;;(setq projectile-switch-project-action 'neotree-projectile-action)
+	 ;;(setq projectile-switch-project-action 'treemacs)
+	 (setq dashboard-startup-banner 'logo)
+	 (setq dashboard-set-heading-icons t)
+	 (setq dashboard-set-file-icons t)
+     )
+
+   #+END_SRC
+*** regular expresions
+   #+BEGIN_SRC emacs-lisp
+     (use-package visual-regexp-steroids
+       :ensure t
+       :defer 2
+       :config
+       (define-key global-map (kbd "C-c r") 'vr/replace)
+       (define-key global-map (kbd "C-c q") 'vr/query-replace)
+       )
+   #+END_SRC
+*** tag navigation
+    #+BEGIN_SRC emacs-lisp
+      (use-package ggtags
+	:ensure t
+	:ensure-system-package global
+	:config (add-hook 'c-mode-common-hook
+			  (lambda ()
+			    (when (derived-mode-p 'c-mode 'c++-mode 'java-mode)
+			      (ggtags-mode 1))))
+	)
+    #+END_SRC
+*** icons
+    M-x all-the-icons-install-fonts
+    #+BEGIN_SRC emacs-lisp
+    (use-package all-the-icons
+    :ensure t)
+    #+END_SRC
+*** project tree
+    #+BEGIN_SRC emacs-lisp
+      (use-package treemacs
+	:ensure t
+	:defer t
+	:init
+	(with-eval-after-load 'winum
+	  (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
+	:config
+	(progn
+	  (setq treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
+		treemacs-deferred-git-apply-delay      0.5
+		treemacs-directory-name-transformer    #'identity
+		treemacs-display-in-side-window        t
+		treemacs-eldoc-display                 t
+		treemacs-file-event-delay              5000
+		treemacs-file-extension-regex          treemacs-last-period-regex-value
+		treemacs-file-follow-delay             0.2
+		treemacs-file-name-transformer         #'identity
+		treemacs-follow-after-init             t
+		treemacs-git-command-pipe              ""
+		treemacs-goto-tag-strategy             'refetch-index
+		treemacs-indentation                   2
+		treemacs-indentation-string            " "
+		treemacs-is-never-other-window         nil
+		treemacs-max-git-entries               5000
+		treemacs-missing-project-action        'ask
+		treemacs-move-forward-on-expand        nil
+		treemacs-no-png-images                 nil
+		treemacs-no-delete-other-windows       t
+		treemacs-project-follow-cleanup        nil
+		treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+		treemacs-position                      'left
+		treemacs-read-string-input             'from-child-frame
+		treemacs-recenter-distance             0.1
+		treemacs-recenter-after-file-follow    nil
+		treemacs-recenter-after-tag-follow     nil
+		treemacs-recenter-after-project-jump   'always
+		treemacs-recenter-after-project-expand 'on-distance
+		treemacs-show-cursor                   nil
+		treemacs-show-hidden-files             nil
+		treemacs-silent-filewatch              nil
+		treemacs-silent-refresh                nil
+		treemacs-sorting                       'alphabetic-asc
+		treemacs-space-between-root-nodes      t
+		treemacs-tag-follow-cleanup            t
+		treemacs-tag-follow-delay              1.5
+		treemacs-user-mode-line-format         nil
+		treemacs-user-header-line-format       nil
+		treemacs-width                         35
+		treemacs-workspace-switch-cleanup      nil)
+
+	  ;; The default width and height of the icons is 22 pixels. If you are
+	  ;; using a Hi-DPI display, uncomment this to double the icon size.
+	  ;;(treemacs-resize-icons 44)
+
+	  (treemacs-follow-mode t)
+	  (treemacs-filewatch-mode t)
+	  (treemacs-fringe-indicator-mode 'always)
+	  (pcase (cons (not (null (executable-find "git")))
+		       (not (null treemacs-python-executable)))
+	    (`(t . t)
+	     (treemacs-git-mode 'deferred))
+	    (`(t . _)
+	     (treemacs-git-mode 'simple))))
+	:bind
+	(:map global-map
+	      ("M-0"       . treemacs-select-window)
+	      ("C-x t 1"   . treemacs-delete-other-windows)
+	      ("C-x t t"   . treemacs)
+	      ("C-x t B"   . treemacs-bookmark)
+	      ("C-x t C-t" . treemacs-find-file)
+	      ("C-x t M-t" . treemacs-find-tag)))
+
+      (use-package treemacs-projectile
+      :after (treemacs projectile)
+      :ensure t
+      :defer t
+      )
+
+      (use-package treemacs-magit
+      :after (treemacs magit)
+      :ensure t
+      :defer t
+      )
+
+      (use-package treemacs-all-the-icons
+      :after (treemacs all-the-icons)
+      :ensure t
+      :defer t
+      :config (treemacs-load-theme "all-the-icons")
+      )
+    #+END_SRC
+*** syntax check
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package flycheck
+	:ensure t
+	:defer t
+	:hook (prog-mode . global-flycheck-mode)
+	)
+    #+END_SRC
+*** autocomplete code
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package company
+	:ensure t
+	:defer t
+	:init (global-company-mode)
+	:custom
+	(company-idle-delay 0.2 "delay before trigering completion")
+	(company-minimum-prefix-length 0 "number of characters to input before getting a completion")
+	:config (add-to-list 'company-backends 'company-irony)
+
+	)
+    #+END_SRC
+*** lsp
+    #+BEGIN_SRC emacs-lisp
+      (use-package lsp-mode
+	:ensure t
+	:init
+	;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+	(setq lsp-keymap-prefix "C-c l")
+	:hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+	       ((c-mode . lsp-deferred)
+		(c++-mode . lsp-deferred)
+		(python-mode . lsp-deferred)
+		)
+	       ;; if you want which-key integration
+	       (lsp-mode . lsp-enable-which-key-integration))
+	:commands (lsp lsp-deferred))
+
+      ;; optionally
+      (use-package lsp-ui
+	:commands lsp-ui-mode
+	:defer t
+	)
+      ;; if you are helm user
+      ;;(use-package helm-lsp :commands helm-lsp-workspace-symbol)
+      ;; if you are ivy user
+      ;;(use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+      (use-package lsp-treemacs
+	:commands lsp-treemacs-errors-list
+	:defer t
+	)
+
+      ;; optionally if you want to use debugger
+      (use-package dap-mode
+	:ensure t
+	:defer t
+	)
+      ;; (use-package dap-LANGUAGE) to load the dap adapter for your language
+
+      ;; optional if you want which-key integration
+      (use-package which-key
+	:ensure t
+	:config
+	(which-key-mode))
+
+    #+END_SRC
 
 * cmake-ide
-añade las funcionalidades de cmake a emacs, esto es muy util por que emacs ahora puede sacar la informacion de un proyecto creado con
-cmake
-#+BEGIN_SRC emacs-lisp
-(use-package dash
-:ensure t)
-(use-package cmake-ide
-:ensure t
-:config
-(cmake-ide-setup))
+ #+BEGIN_SRC emacs-lisp
+   (use-package dash
+     :ensure t)
+   (use-package cmake-ide
+     :ensure t
+     :defer t
+     :config
+     (cmake-ide-setup)
+     )
 
-#+END_SRC
-* flycheck
-flycheck es un modulo que se usa para revisar errores y reglas de codigo, el plugin es independiente del lenguaje,
-por lo que se tienen que instalar sus dependencias para cada lenguaje
-NOTA: cada plugin requiere dependencias externas a emacs como puede ser un compilador o herramientas usadas para el
-analisis, para mas informacion: https://www.flycheck.org/en/latest/
-#+BEGIN_SRC emacs-lisp
-(use-package flycheck
-  :ensure t
-  :init (global-flycheck-mode))
-#+END_SRC
+ #+END_SRC
 
-* flycheck rtags
-añade los tags de rtags a flyacheck, con esto flycheck puede analizar mas completamente el proyecto, un ejemplo de esto es
-en el caso de c que si no esta definido un #DEFINE sombrea la seccion del codigo para que de manera visual se vea que ese codigo
-no se usa
-#+BEGIN_SRC emacs-lisp
-(use-package flycheck-rtags
-:ensure t
-  :config
-  (progn
-    ;; ensure that we use only rtags checking
-    ;; https://github.com/Andersbakken/rtags#optional-1
-    (defun setup-flycheck-rtags ()
-      (flycheck-select-checker 'rtags)
-      (setq-local flycheck-highlighting-mode nil) ;; RTags creates more accurate overlays.
-      (setq-local flycheck-check-syntax-automatically nil)
-      (rtags-set-periodic-reparse-timeout 0.9)  ;; Run flycheck 2 seconds after being idle.
-      )
-    (add-hook 'c-mode-hook #'setup-flycheck-rtags)
-    (add-hook 'c++-mode-hook #'setup-flycheck-rtags)
-    ))
-#+END_SRC
+* c
+flycheck requires cppcheck dependency to work inside c projects
 
-renombrar stm32-emacs a stm32
-#+BEGIN_SRC emacs-lisp
-(load-file (concat user-emacs-directory "/stm32/stm32.el"))
-(require 'stm32)
-#+END_SRC
-* latex
-** colores codigo
-#+BEGIN_SRC emacs-lisp
-(setq org-latex-pdf-process
-      '("xelatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-        "xelatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-        "xelatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+ #+BEGIN_SRC emacs-lisp
+   (use-package company-irony
+   :ensure t
+   :defer t
+   :after (company irony)
+   ;;:ensure-system-package llvm
+   :hook ((irony-mode-hook . electric-pair-mode)
+	  (c++-mode-hook . irony-mode)
+	  (c-mode-hook . irony-mode)
+	  (irony-mode-hook . company-irony-setup-begin-commands)
+	  (irony-mode-hook . irony-cdb-autosetup-compile-options)
+	  )
+   :config
+   (add-to-list 'company-backends 'company-irony)
+   )
+ #+END_SRC
+ #+BEGIN_SRC emacs-lisp
+   (use-package irony
+     :ensure t
+     :defer t
+   )
+ #+END_SRC
 
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'org-latex-packages-alist '("" "minted"))
-(setq org-latex-listings 'minted)
-#+END_SRC
-
-* yasnippet
-#+BEGIN_SRC emacs-lisp
-  (use-package yasnippet
-    :ensure t
-    :config
-    (add-to-list 'load-path
-		 "~/.emacs.d/plugins/yasnippet")
-    )
-#+END_SRC
-yasnippet no incluye las plantillas(snipets) por lo que se tienen que añadir snipets
-#+BEGIN_SRC emacs-lisp
-  (use-package yasnippet-snippets
-    :ensure t
-    )
-#+END_SRC
-* git
-** git-gutter
-git gutter muestra los cambios en un archivo abierto, muestra lo que se añade, lo que se edita, y lo que se borra
-#+BEGIN_SRC emacs-lisp
-(use-package git-gutter
-:ensure t
-:config(global-git-gutter-mode +1))
-#+END_SRC
+ #+BEGIN_SRC emacs-lisp
+   (use-package company-irony-c-headers
+   :ensure t
+   :defer t
+   :after (company irony company-irony)
+   :config
+   (add-to-list
+       'company-backends '(company-irony-c-headers company-irony))
+   )
+ #+END_SRC
 
 * python
-elpy
-elpy es ina herramienta que cinfigura emacs para trabajar con python.
-#+BEGIN_SRC emacs-lisp
-  (use-package elpy
-    :ensure t
-    :defer t
-    :init
-    (advice-add 'python-mode :before 'elpy-enable)
-    )
-#+END_SRC
 
-elpy no incluye validadores de codigo por lo que se añade a flycheck los validadores de python
-#+BEGIN_SRC emacs-lisp
-(use-package flycheck-pycheckers
-    :ensure t
-    :defer t
-    :init
-    (with-eval-after-load 'flycheck
-    (add-hook 'flycheck-mode-hook #'flycheck-pycheckers-setup))
-)
-#+END_SRC
-* yaml
-modo para los archivos yaml
-#+BEGIN_SRC emacs-lisp
-  (use-package yaml-mode
-    :ensure t
-    )
-#+END_SRC
-* frontEnd
-* typescript
-#+BEGIN_SRC emacs-lisp
-  (use-package typescript-mode
-    :ensure t
-    :config
-    (with-eval-after-load 'typescript-mode (add-hook 'typescript-mode-hook #'lsp))
-)
-#+END_SRC
-* angular
-#+BEGIN_SRC emacs-lisp
-  (use-package ng2-mode
-    :ensure t)
-#+END_SRC
-* javascript
-js2 
-#+BEGIN_SRC emacs-lisp
-  (use-package js2-mode
-    :ensure t	 
-    )
-(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+this requires the package pyright and npm
+ #+BEGIN_SRC emacs-lisp
+   (use-package python
+     :ensure t
+     :config
+     ;; Remove guess indent python message
+     (setq python-indent-guess-indent-offset-verbose nil)
+     ;; Use IPython when available or fall back to regular Python
+     ;; (cond
+     ;;  ((executable-find "ipython")
+     ;;   (progn
+     ;;     (setq python-shell-buffer-name "IPython")
+     ;;     (setq python-shell-interpreter "ipython")
+     ;;     (setq python-shell-interpreter-args "-i --simple-prompt")))
+     ;;  ((executable-find "python3")
+     ;;   (setq python-shell-interpreter "python3"))
+     ;;  ((executable-find "python2")
+     ;;   (setq python-shell-interpreter "python2"))
+     ;;  (t
+     ;;   (setq python-shell-interpreter "python")))
+     )
 
-;; Better imenu
-(add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
-#+END_SRC
+   (use-package lsp-pyright
+     :ensure t
+     :defer t
+     :config
+     ;;(setq lsp-clients-python-library-directories '("/usr/" "~/miniconda3/pkgs"))
+     (setq lsp-pyright-disable-language-service nil
+	   lsp-pyright-disable-organize-imports nil
+	   lsp-pyright-auto-import-completions t
+	   lsp-pyright-use-library-code-for-types t
+	   ;;lsp-pyright-venv-path "~/miniconda3/envs"
+	   )
+     :hook ((python-mode . (lambda ()
+			     (require 'lsp-pyright) (lsp-deferred)))))
 
-js2-refactor
-#+BEGIN_SRC emacs-lisp
-  (use-package js2-refactor
-    :ensure t
-    :config
-    (add-hook 'js2-mode-hook #'js2-refactor-mode)
-    (js2r-add-keybindings-with-prefix "C-c C-r")
-    (define-key js-mode-map (kbd "M-.") nil)
-    (define-key js2-mode-map (kbd "C-k") #'js2r-kill)
-    )
-#+END_SRC
-xref-js2
-#+BEGIN_SRC emacs-lisp
-  (use-package xref-js2
-    :ensure t
-    :config
-    (add-hook 'js2-mode-hook (lambda ()
-			       (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
-    )
-
-#+END_SRC
-* projectile
-#+BEGIN_SRC emacs-lisp
-  (use-package projectile
-    :ensure t
-    :config
-    (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-    (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-    (projectile-mode +1))
-#+END_SRC
-
-* dashboard
-dashboard reemplaza la ventana por defecto de emacs y pone un historico de archivos recientes y de proyectos,
-dashboard para funcionar requiere page-break-lines
-#+BEGIN_SRC emacs-lisp
-  (use-package page-break-lines
-    :ensure t
-    :config (turn-on-page-break-lines-mode))
-
-  (use-package dashboard
-    :ensure t
-    :config
-    (dashboard-setup-startup-hook)
-    (setq dashboard-items '((recents  . 3)
-			    (projects . 5)))
-  (setq projectile-switch-project-action 'neotree-projectile-action)
-  (setq dashboard-startup-banner 'logo)
-)
-
-#+END_SRC
-* visual-regexp
-vusal-regexp extiene la funcionalidad de replace-regexp con esto el remplazo de expreciones regulares sea mejor
-#+BEGIN_SRC emacs-lisp
-  (use-package visual-regexp
-    :ensure t)
-
-(use-package visual-regexp-steroids
-:ensure t)
-(require 'visual-regexp-steroids)
-(define-key global-map (kbd "C-c r") 'vr/replace)
-(define-key global-map (kbd "C-c q") 'vr/query-replace)
-#+END_SRC
+ #+END_SRC
