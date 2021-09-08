@@ -2,7 +2,10 @@
 #+DESCRIPTION: An org-babel based emacs configuration
 #+LANGUAGE: en
 #+PROPERTY: results silent
-
+#+BEGIN_SRC emacs-lisp
+(load-file (concat user-emacs-directory "/stm32/stm32.el"))
+(require 'stm32)
+#+END_SRC
 * ajustes
 ** garbage collector
    In some case the garbage collector will cause performace issues on very large
@@ -172,8 +175,6 @@
 
    #+BEGIN_SRC emacs-lisp
    (setq backup-directory-alist '(("." . "~/.saves")))
-   #+END_SRC
-   #+BEGIN_SRC emacs-lisp
    (setq backup-directory-alist
 	  `((".*" . ,"~/.saves")))
    (setq auto-save-file-name-transforms
@@ -208,7 +209,7 @@
  #+END_SRC
 ** ide like config
 
-*** TODO projectile
+*** projectile
    #+BEGIN_SRC emacs-lisp
      (use-package projectile
        :ensure t
@@ -234,7 +235,7 @@
 	 (setq dashboard-items '((recents  . 3)
 				(projects . 5)))
 	 ;;(setq projectile-switch-project-action 'neotree-projectile-action)
-	 ;;(setq projectile-switch-project-action 'treemacs)
+	 (setq projectile-switch-project-action 'treemacs)
 	 (setq dashboard-startup-banner 'logo)
 	 (setq dashboard-set-heading-icons t)
 	 (setq dashboard-set-file-icons t)
@@ -400,8 +401,9 @@
 	       (lsp-mode . lsp-enable-which-key-integration))
 	:commands (lsp lsp-deferred))
 
-      ;; optionally
+      ;; this presents the documentation of the functions, definitions etc in a pop-up window
       (use-package lsp-ui
+	:ensure t
 	:commands lsp-ui-mode
 	:defer t
 	)
@@ -410,6 +412,7 @@
       ;; if you are ivy user
       ;;(use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
       (use-package lsp-treemacs
+	:ensure t
 	:commands lsp-treemacs-errors-list
 	:defer t
 	)
@@ -429,19 +432,35 @@
 
     #+END_SRC
 
-* cmake-ide
- #+BEGIN_SRC emacs-lisp
-   (use-package dash
-     :ensure t)
-   (use-package cmake-ide
-     :ensure t
-     :defer t
-     :config
-     (cmake-ide-setup)
-     )
+*** cmake-ide
+   #+BEGIN_SRC emacs-lisp
+     (use-package dash
+       :ensure t)
+     (use-package cmake-ide
+       :ensure t
+       :defer t
+       :config
+       (cmake-ide-setup)
+       )
 
- #+END_SRC
+   #+END_SRC
+*** yasnippet
+       #+BEGIN_SRC emacs-lisp
+	 (use-package yasnippet
+	   :ensure t
+	   :defer t
+	   :config
+	   (yas-global-mode 1)
+	   )
 
+	 (use-package yasnippet-snippets
+	   :ensure t
+	 ;;  :defer t
+	   :config
+	   (yas-reload-all)
+	   )
+
+   #+END_SRC
 * c
 flycheck requires cppcheck dependency to work inside c projects
 
